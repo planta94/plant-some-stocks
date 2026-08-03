@@ -54,8 +54,9 @@ def generate_static_site():
 
     # 4. Copy modular static CSS & JS directories
     static_dir = os.path.join(os.path.dirname(__file__), "src", "static")
-    shutil.copytree(os.path.join(static_dir, "css"), os.path.join(dist_dir, "css"))
-    shutil.copytree(os.path.join(static_dir, "js"), os.path.join(dist_dir, "js"))
+    shutil.copytree(os.path.join(static_dir, "css"), os.path.join(dist_dir, "css"), dirs_exist_ok=True)
+    shutil.copytree(os.path.join(static_dir, "js"), os.path.join(dist_dir, "js"), dirs_exist_ok=True)
+
 
     # 5. Read HTML template & inject window.STATIC_SCAN_DATA and window.STATIC_BACKTEST_DATA
     with open(os.path.join(static_dir, "index.html"), "r", encoding="utf-8") as f:
