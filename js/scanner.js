@@ -76,18 +76,14 @@ async function runLiveScan() {
     renderMatrixTable(data);
   } catch (err) {
     clearInterval(progressInterval);
-    console.warn("Live API unavailable, attempting static cache or fallback...", err);
-    if (window.STATIC_SCAN_DATA) {
-      completeProgressMonitor("Loaded pre-computed market data", window.STATIC_SCAN_DATA.total_scanned);
-      renderMatrixTable(window.STATIC_SCAN_DATA);
-    } else {
-      document.getElementById("progress-card").classList.add("hidden");
-      tbody.innerHTML = `<tr><td colspan="11" class="text-center text-red">Error loading market data. Ensure server is running.</td></tr>`;
-      summaryBadge.className = "badge badge-avoid";
-      summaryBadge.innerText = "Connection Error";
-    }
+    document.getElementById("progress-card").classList.add("hidden");
+    tbody.innerHTML = `<tr><td colspan="11" class="text-center text-red font-semibold"><i class="fa-solid fa-triangle-exclamation"></i> Live API Error: ${err.message}</td></tr>`;
+    summaryBadge.className = "badge badge-avoid";
+    summaryBadge.innerText = "API Error";
+    console.error("Live Scan API Error:", err);
   }
 }
+
 
 function renderMatrixTable(data) {
   scanDataCache = data.results || [];

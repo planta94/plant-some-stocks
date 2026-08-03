@@ -1,4 +1,4 @@
-/* blueprint.js - Stock Blueprint Inspector & ApexCharts Module */
+/* blueprint.js - Live Stock Blueprint Inspector & ApexCharts Module */
 
 let currentChart = null;
 
@@ -15,10 +15,9 @@ async function inspectStock(ticker) {
     const stock = await API.fetchStock(ticker);
     renderBlueprintDetails(stock);
   } catch (err) {
-    console.warn("Could not fetch stock details from backend API", err);
-    // Find in scan cache if offline
-    const cached = scanDataCache.find(s => s.ticker === ticker);
-    if (cached) renderBlueprintDetails(cached);
+    console.error("Could not fetch stock details from live API:", err);
+    document.getElementById("bp-name").innerText = ticker;
+    document.getElementById("bp-action-note").innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red"></i> Error loading live stock data: ${err.message}`;
   }
 }
 
@@ -79,46 +78,11 @@ function renderBlueprintDetails(stock) {
     metricsGrid.innerHTML = mHtml;
   }
 
-  // Render ApexChart if chart data is present or generate fallback series
-  let chartData = stock.chart_data;
-  if (!chartData || chartData.length === 0) {
-    chartData = generateSyntheticChartData(stock.current_price || stock.entry_price || 2.0);
+  // Render ApexChart if chart data is present
+  if (stock.chart_data && stock.chart_data.length > 0) {
+    renderTechnicalChart(stock.chart_data);
   }
-  renderTechnicalChart(chartData);
 }
-
-function generateSyntheticChartData(basePrice) {
-  const data = [];
-  let price = basePrice * 0.9;
-  const now = new Date();
-  for (let i = 30; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split('T')[0];
-    const change = (Math.random() - 0.47) * (basePrice * 0.02);
-    const open = price;
-    const close = Math.max(0.1, open + change);
-    const high = Math.max(open, close) + Math.random() * (basePrice * 0.01);
-    const low = Math.min(open, close) - Math.random() * (basePrice * 0.01);
-    price = close;
-    data.push({
-      date: dateStr,
-      open: roundVal(open),
-      high: roundVal(high),
-      low: roundVal(low),
-      close: roundVal(close),
-      ema20: roundVal(price * 0.98),
-      ema50: roundVal(price * 0.95),
-      ema200: roundVal(price * 0.90)
-    });
-  }
-  return data;
-}
-
-function roundVal(v) {
-  return Math.round(v * 100) / 100;
-}
-
 
 function renderTechnicalChart(seriesData) {
   const chartElement = document.querySelector("#stock-chart");

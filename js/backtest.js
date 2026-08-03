@@ -1,75 +1,23 @@
-/* backtest.js - Backtest Simulation Controller & Analytics Module */
+/* backtest.js - Live Backtest Simulation Controller & Analytics Module */
 
 let btProgressInterval = null;
 let equityChart = null;
 let exitChart = null;
 let cachedBacktestData = null;
 
-const DEFAULT_BACKTEST_FALLBACK_DATA = {
-  summary_metrics: {
-    "Simulation Window": "1 Year Walk-Forward",
-    "Total Universe Stocks": 12,
-    "Total Trades Executed": 73,
-    "Win Rate": "43.8%",
-    "Average Trade Return": "+1.72%",
-    "Cumulative Return": "+125.68%",
-    "Profit Factor": 1.48
-  },
-  stock_breakdown: [
-    { "Ticker": "1155.KL", "Name": "MAYBANK", "Total Trades": 4, "Win Rate (%)": "25.0%", "Cumulative Return": "-5.84%" },
-    { "Ticker": "1023.KL", "Name": "CIMB", "Total Trades": 10, "Win Rate (%)": "50.0%", "Cumulative Return": "+8.45%" },
-    { "Ticker": "1295.KL", "Name": "PBBANK", "Total Trades": 12, "Win Rate (%)": "50.0%", "Cumulative Return": "+14.04%" },
-    { "Ticker": "1066.KL", "Name": "RHBBANK", "Total Trades": 5, "Win Rate (%)": "80.0%", "Cumulative Return": "+18.47%" },
-    { "Ticker": "1082.KL", "Name": "HLFG", "Total Trades": 6, "Win Rate (%)": "50.0%", "Cumulative Return": "-2.74%" },
-    { "Ticker": "1015.KL", "Name": "AMBANK", "Total Trades": 6, "Win Rate (%)": "66.7%", "Cumulative Return": "+24.62%" },
-    { "Ticker": "5347.KL", "Name": "TENAGA", "Total Trades": 8, "Win Rate (%)": "62.5%", "Cumulative Return": "+5.71%" },
-    { "Ticker": "6742.KL", "Name": "YTLPOWR", "Total Trades": 3, "Win Rate (%)": "33.3%", "Cumulative Return": "+2.48%" },
-    { "Ticker": "4677.KL", "Name": "YTL", "Total Trades": 7, "Win Rate (%)": "28.6%", "Cumulative Return": "-18.4%" },
-    { "Ticker": "5209.KL", "Name": "GASMSIA", "Total Trades": 10, "Win Rate (%)": "40.0%", "Cumulative Return": "-4.98%" },
-    { "Ticker": "6947.KL", "Name": "CDB", "Total Trades": 2, "Win Rate (%)": "0.0%", "Cumulative Return": "-7.51%" },
-    { "Ticker": "6012.KL", "Name": "MAXIS", "Total Trades": 5, "Win Rate (%)": "40.0%", "Cumulative Return": "+0.67%" }
-  ],
-  recent_trades: [
-    { "Ticker": "4197.KL", "Entry_Date": "2026-03-09", "Exit_Date": "2026-05-20", "Entry_Price": 2.23, "Exit_Price": 2.07, "Return_Pct": -7.22, "Exit_Reason": "Stop Loss Hit" },
-    { "Ticker": "4197.KL", "Entry_Date": "2026-01-05", "Exit_Date": "2026-02-11", "Entry_Price": 2.02, "Exit_Price": 2.28, "Return_Pct": 12.66, "Exit_Reason": "Target Price Hit" },
-    { "Ticker": "4197.KL", "Entry_Date": "2025-12-12", "Exit_Date": "2025-12-23", "Entry_Price": 1.95, "Exit_Price": 2.09, "Return_Pct": 7.07, "Exit_Reason": "RSI Overbought Exit" },
-    { "Ticker": "4197.KL", "Entry_Date": "2025-11-27", "Exit_Date": "2025-12-08", "Entry_Price": 1.98, "Exit_Price": 1.85, "Return_Pct": -6.77, "Exit_Reason": "Stop Loss Hit" },
-    { "Ticker": "4197.KL", "Entry_Date": "2025-11-19", "Exit_Date": "2025-11-26", "Entry_Price": 1.96, "Exit_Price": 1.87, "Return_Pct": -4.82, "Exit_Reason": "Stop Loss Hit" },
-    { "Ticker": "4197.KL", "Entry_Date": "2025-11-06", "Exit_Date": "2025-11-18", "Entry_Price": 2.04, "Exit_Price": 1.96, "Return_Pct": -4.09, "Exit_Reason": "Stop Loss Hit" },
-    { "Ticker": "4197.KL", "Entry_Date": "2025-10-07", "Exit_Date": "2025-11-05", "Entry_Price": 2.13, "Exit_Price": 2.00, "Return_Pct": -6.21, "Exit_Reason": "Stop Loss Hit" },
-    { "Ticker": "4715.KL", "Entry_Date": "2026-05-15", "Exit_Date": "2026-05-22", "Entry_Price": 2.02, "Exit_Price": 1.95, "Return_Pct": -3.47, "Exit_Reason": "Stop Loss Hit" },
-    { "Ticker": "4715.KL", "Entry_Date": "2025-11-05", "Exit_Date": "2025-12-02", "Entry_Price": 2.27, "Exit_Price": 2.24, "Return_Pct": -1.24, "Exit_Reason": "Stop Loss Hit" },
-    { "Ticker": "4715.KL", "Entry_Date": "2025-09-30", "Exit_Date": "2025-10-14", "Entry_Price": 2.03, "Exit_Price": 2.24, "Return_Pct": 10.52, "Exit_Reason": "Target Price Hit" },
-    { "Ticker": "4715.KL", "Entry_Date": "2025-08-13", "Exit_Date": "2025-09-10", "Entry_Price": 1.93, "Exit_Price": 2.08, "Return_Pct": 7.75, "Exit_Reason": "Target Price Hit" }
-  ],
-  equity_curve: [
-    { "date": "2025-08-13", "cumulative_return": 0.0 },
-    { "date": "2025-09-10", "cumulative_return": 7.75 },
-    { "date": "2025-10-14", "cumulative_return": 18.27 },
-    { "date": "2025-11-05", "cumulative_return": 12.06 },
-    { "date": "2025-11-18", "cumulative_return": 7.97 },
-    { "date": "2025-11-26", "cumulative_return": 3.15 },
-    { "date": "2025-12-02", "cumulative_return": 1.91 },
-    { "date": "2025-12-08", "cumulative_return": -4.86 },
-    { "date": "2025-12-23", "cumulative_return": 2.21 },
-    { "date": "2026-02-11", "cumulative_return": 14.87 },
-    { "date": "2026-05-20", "cumulative_return": 7.65 },
-    { "date": "2026-05-22", "cumulative_return": 4.18 }
-  ],
-  exit_stats: {
-    "Target Price Hit": 28,
-    "Stop Loss Hit": 35,
-    "RSI Overbought Exit": 10
-  }
-};
-
 async function runBacktestSimulation() {
   const btReturn = document.getElementById("bt-kpi-return");
+  const btWinrate = document.getElementById("bt-kpi-winrate");
+  const btPF = document.getElementById("bt-kpi-pf");
+  const btTrades = document.getElementById("bt-kpi-trades");
 
   if (btReturn) btReturn.innerText = "Running...";
+  if (btWinrate) btWinrate.innerText = "--";
+  if (btPF) btPF.innerText = "--";
+  if (btTrades) btTrades.innerText = "--";
 
   // Start progress animation
-  showProgressMonitor("Running 1-Year Walk-Forward Simulation...", "Simulating daily trading history across KLSE universe...");
+  showProgressMonitor("Running 1-Year Walk-Forward Simulation...", "Executing live daily simulation across KLSE universe...");
   let currProgress = 10;
   clearInterval(btProgressInterval);
   btProgressInterval = setInterval(() => {
@@ -87,11 +35,24 @@ async function runBacktestSimulation() {
     renderBacktestDashboard(data);
   } catch (err) {
     clearInterval(btProgressInterval);
-    console.info("Live Backtest API unavailable (404/static mode). Serving walk-forward simulation dataset.");
-    const fallbackData = window.STATIC_BACKTEST_DATA || DEFAULT_BACKTEST_FALLBACK_DATA;
-    completeProgressMonitor("Simulation Dataset Loaded Successfully!", 100);
-    cachedBacktestData = fallbackData;
-    renderBacktestDashboard(fallbackData);
+    document.getElementById("progress-card").classList.add("hidden");
+    
+    if (btReturn) btReturn.innerText = "Error";
+    if (btWinrate) btWinrate.innerText = "Error";
+    if (btPF) btPF.innerText = "Error";
+    if (btTrades) btTrades.innerText = "Error";
+
+    const stockBody = document.getElementById("bt-stock-table-body");
+    if (stockBody) {
+      stockBody.innerHTML = `<tr><td colspan="5" class="text-center text-red font-semibold"><i class="fa-solid fa-triangle-exclamation"></i> ${err.message}</td></tr>`;
+    }
+
+    const tradesBody = document.getElementById("bt-trades-table-body");
+    if (tradesBody) {
+      tradesBody.innerHTML = `<tr><td colspan="7" class="text-center text-red font-semibold"><i class="fa-solid fa-triangle-exclamation"></i> Live API unavailable. Ensure backend server is running on port 8000.</td></tr>`;
+    }
+
+    console.error("Live Backtest Engine API Failure:", err);
   }
 }
 
@@ -265,7 +226,7 @@ function renderExitReasonChart(exitStats) {
   const series = Object.values(exitStats || {});
 
   const options = {
-    series: series.length > 0 ? series : [10, 5, 2],
+    series: series.length > 0 ? series : [0, 0, 0],
     labels: labels.length > 0 ? labels : ['Target Price Hit', 'Stop Loss Hit', 'RSI Overbought Exit'],
     chart: {
       type: 'donut',
