@@ -242,13 +242,15 @@ def analyze_stock(df: pd.DataFrame, fundamentals: dict) -> dict:
         "chart_data": chart_series
     }
 
-def run_live_scan(tickers=None, min_fund=60.0, require_uptrend=True, min_rr=2.0, use_full_universe=False):
-    """Scans the KLSE stock universe with an Early Exit Fast-Gatekeeper for ultra-fast scanning."""
+from src.core.config import DEFAULT_KLSE_STOCKS, get_full_klse_universe, get_portfolio_tickers
+
+def run_live_scan(tickers=None, min_fund=60.0, require_uptrend=True, min_rr=2.0, use_full_universe=False, portfolio="top50"):
+    """Scans the KLSE stock universe or thematic portfolio with an Early Exit Fast-Gatekeeper."""
     if tickers is None:
-        if use_full_universe:
+        if use_full_universe or str(portfolio).lower() == "full":
             tickers = list(get_full_klse_universe().keys())
         else:
-            tickers = list(DEFAULT_KLSE_STOCKS.keys())
+            tickers = get_portfolio_tickers(portfolio)
 
     scanned_results = []
     skipped_count = 0

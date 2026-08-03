@@ -1,6 +1,6 @@
 """
 config.py - Application configuration and default KLSE stock universe settings.
-Supports both curated top liquid stocks and full Bursa Malaysia universe (~1,000 stocks).
+Supports thematic portfolios (Banking, Tech, Infrastructure, High Dividend, etc.) and full Bursa Malaysia universe (~1,000 stocks).
 """
 
 # Curated Top Liquid Stocks across all Bursa Malaysia sectors
@@ -80,11 +80,66 @@ DEFAULT_KLSE_STOCKS = {
     "4197.KL": {"name": "Sime Darby Berhad", "sector": "Consumer / Industrial"}
 }
 
+THEMATIC_PORTFOLIOS = {
+    "top50": {
+        "name": "⚡ Top 50 Liquid Large-Caps",
+        "description": "Highest market cap & volume liquid bluechips across Bursa Malaysia",
+        "tickers": list(DEFAULT_KLSE_STOCKS.keys())
+    },
+    "banking": {
+        "name": "🏦 Banking & Financial Services Leaders",
+        "description": "Core Malaysian banking giants, investment banks, and insurance providers",
+        "tickers": ["1155.KL", "1023.KL", "1295.KL", "1066.KL", "1082.KL", "1015.KL"]
+    },
+    "tech": {
+        "name": "💻 Tech, Semiconductor & AI Infrastructure",
+        "description": "OSAT, semiconductor equipment, automation, and tech supply chain leaders",
+        "tickers": ["0166.KL", "7084.KL", "3867.KL", "5005.KL", "0128.KL", "0097.KL", "0208.KL", "7204.KL", "5292.KL", "7160.KL"]
+    },
+    "infra": {
+        "name": "🏗️ Utilities, Energy & Infrastructure",
+        "description": "Power utilities, data center power infrastructure, and construction catalysts",
+        "tickers": ["5347.KL", "6742.KL", "4677.KL", "5209.KL", "5398.KL", "3336.KL", "5288.KL", "7293.KL", "5141.KL"]
+    },
+    "dividends": {
+        "name": "💵 High Dividend Yield Aristocrats",
+        "description": "Defensive income stocks with strong dividend yields (>4.0%) and healthy cash flows",
+        "tickers": ["1155.KL", "5209.KL", "5183.KL", "4863.KL", "6033.KL", "1066.KL", "1295.KL"]
+    },
+    "consumer": {
+        "name": "🛒 Consumer Products & Retail Champions",
+        "description": "Domestic retail leaders, staples, and aviation consumer recovery plays",
+        "tickers": ["5296.KL", "4707.KL", "5099.KL", "3689.KL", "6033.KL", "4197.KL"]
+    },
+    "gloves": {
+        "name": "🏥 Healthcare & Glove Manufacturers",
+        "description": "Private hospital operators and rubber glove export leaders",
+        "tickers": ["5225.KL", "5878.KL", "5168.KL", "7113.KL", "7153.KL"]
+    },
+    "full": {
+        "name": "🌐 Full Bursa Malaysia Market (~1000 Stocks)",
+        "description": "Market-wide scan covering all Main & ACE Market tickers",
+        "tickers": None
+    }
+}
+
 DEFAULT_SCAN_PARAMS = {
     "min_fund": 60.0,
     "require_uptrend": True,
     "min_rr": 2.0
 }
+
+def get_portfolio_tickers(portfolio_key: str = "top50"):
+    """Returns list of ticker symbols for a specified portfolio strategy."""
+    key = str(portfolio_key).lower().strip()
+    if key == "full":
+        return list(get_full_klse_universe().keys())
+    
+    port = THEMATIC_PORTFOLIOS.get(key)
+    if port and port.get("tickers"):
+        return port["tickers"]
+    
+    return list(DEFAULT_KLSE_STOCKS.keys())
 
 def get_full_klse_universe():
     """
@@ -93,9 +148,6 @@ def get_full_klse_universe():
     """
     full_dict = dict(DEFAULT_KLSE_STOCKS)
     
-    # Generate numerical KLSE tickers across active ranges
-    # 0001 - 0300 (ACE Market Technology & Industrials)
-    # 1000 - 9999 (Main Market Financials, Consumer, Industrials, Property, REITs)
     sample_ranges = [
         range(1, 300),
         range(1000, 2000),

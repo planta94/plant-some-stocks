@@ -15,14 +15,16 @@ def scan_live_stocks(
     min_fund: float = Query(60.0, description="Minimum Fundamental score (0-100)"),
     require_uptrend: bool = Query(True, description="Filter for price >= EMA 200"),
     min_rr: float = Query(2.0, description="Minimum Risk to Reward Ratio"),
-    full_market: bool = Query(False, description="Scan entire Bursa Malaysia Market (~1000 stocks)")
+    full_market: bool = Query(False, description="Scan entire Bursa Malaysia Market (~1000 stocks)"),
+    portfolio: str = Query("top50", description="Thematic portfolio strategy scope")
 ):
-    """Executes live scanner across KLSE stock universe."""
+    """Executes live scanner across KLSE stock universe or thematic portfolio."""
     res = run_live_scan(
         min_fund=min_fund,
         require_uptrend=require_uptrend,
         min_rr=min_rr,
-        use_full_universe=full_market
+        use_full_universe=full_market,
+        portfolio=portfolio
     )
     return res
 

@@ -71,7 +71,7 @@ async function runLiveScan() {
   }, 250);
 
   try {
-    const data = await API.scanLive(minFund, minRR, requireUptrend, fullMarket);
+    const data = await API.scanLive(minFund, minRR, requireUptrend, fullMarket, scope);
     completeProgressMonitor(`Evaluated ${data.total_scanned} stocks. Matched ${data.matched_count} recommendations.`, data.total_scanned);
     renderMatrixTable(data);
   } catch (err) {
