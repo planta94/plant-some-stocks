@@ -16,6 +16,26 @@ def _safe_float(val, default=0.0):
     except (ValueError, TypeError):
         return float(default)
 
+def _clean_dividend_yield(raw_val, current_price=1.0, default=3.5):
+    """
+    Cleans dividendYield from yfinance which can be:
+    - Fraction: 0.045 -> 4.5%
+    - Percentage: 4.5 -> 4.5%
+    - Scaled: 450 -> 4.5%
+    """
+    if raw_val is None:
+        return float(default)
+    val = _safe_float(raw_val, default=default)
+    if val <= 0:
+        return 0.0
+    if val <= 1.0:
+        return round(val * 100, 2)
+    elif 1.0 < val <= 30.0:
+        return round(val, 2)
+    elif val > 30.0:
+        return round(val / 100, 2)
+    return round(float(default), 2)
+
 def fetch_klse_stock_data(symbol: str, period: str = "2y"):
     """
     Fetches price history and fundamentals for a given KLSE ticker (e.g. '1155.KL').
@@ -50,14 +70,27 @@ def fetch_klse_stock_data(symbol: str, period: str = "2y"):
         high_52 = _safe_float(info.get("fiftyTwoWeekHigh"), default=df['Close'].max())
         low_52 = _safe_float(info.get("fiftyTwoWeekLow"), default=df['Close'].min())
 
+        raw_div = info.get("dividendYield")
+        if raw_div is None and info.get("dividendRate") and curr_p > 0:
+            raw_div = info.get("dividendRate") / curr_p
+
+        cleaned_div_yield = _clean_dividend_yield(raw_div, current_price=curr_p, default=3.5)
+
+        # Clean ROE
+        raw_roe = info.get("returnOnEquity")
+        cleaned_roe = _safe_float(raw_roe, default=0.10)
+        if 0.0 < cleaned_roe <= 1.0:
+            cleaned_roe = cleaned_roe * 100
+        cleaned_roe = round(cleaned_roe, 2)
+
         fundamentals = {
             "name": str(info.get("shortName") or info.get("longName") or DEFAULT_KLSE_STOCKS.get(symbol_formatted, {}).get("name", symbol_formatted)),
             "sector": str(info.get("sector") or DEFAULT_KLSE_STOCKS.get(symbol_formatted, {}).get("sector", "General")),
-            "pe_ratio": _safe_float(info.get("trailingPE") or info.get("forwardPE"), default=14.5),
-            "pb_ratio": _safe_float(info.get("priceToBook"), default=1.2),
-            "roe": _safe_float(info.get("returnOnEquity"), default=0.10) * 100 if isinstance(info.get("returnOnEquity"), (int, float)) else 10.0,
-            "debt_to_equity": _safe_float(info.get("debtToEquity"), default=45.0),
-            "dividend_yield": _safe_float(info.get("dividendYield"), default=0.035) * 100 if isinstance(info.get("dividendYield"), (int, float)) else 3.5,
+            "pe_ratio": round(_safe_float(info.get("trailingPE") or info.get("forwardPE"), default=14.5), 2),
+            "pb_ratio": round(_safe_float(info.get("priceToBook"), default=1.2), 2),
+            "roe": cleaned_roe,
+            "debt_to_equity": round(_safe_float(info.get("debtToEquity"), default=45.0), 2),
+            "dividend_yield": cleaned_div_yield,
             "market_cap": int(_safe_float(info.get("marketCap"), default=5_000_000_000)),
             "fifty_two_week_high": round(high_52, 2),
             "fifty_two_week_low": round(low_52, 2),

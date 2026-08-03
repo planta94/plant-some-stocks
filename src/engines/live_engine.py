@@ -51,6 +51,8 @@ def analyze_stock(df: pd.DataFrame, fundamentals: dict) -> dict:
     pb = _safe_float(fundamentals.get("pb_ratio"), default=1.2)
     de = _safe_float(fundamentals.get("debt_to_equity"), default=50.0)
     div_yield = _safe_float(fundamentals.get("dividend_yield"), default=3.0)
+    if div_yield > 30.0:
+        div_yield = round(div_yield / 100, 2)
 
     f_score = 0
     f_reasons = []
@@ -146,9 +148,17 @@ def analyze_stock(df: pd.DataFrame, fundamentals: dict) -> dict:
         risk_amount = round(cmp * 0.05, 2)
         sl_price = round(cmp - risk_amount, 2)
 
-    ep_low = round(min(cmp, max(sl_price + 0.01, ema_20 * 0.995)), 2)
+    # Dynamic EP Calculation: Target limit buy zone near EMA 20 support
+    if cmp > ema_20:
+        suggested_ep = max(ema_20, cmp * 0.98)
+    else:
+        suggested_ep = cmp
+
+    ep_price = round(float(suggested_ep), 2)
+    ep_low = round(min(ep_price, max(sl_price + 0.01, ema_20 * 0.985)), 2)
     ep_high = round(cmp, 2)
-    ep_price = round(cmp, 2)
+
+    entry_range_str = f"MYR {ep_low:.2f} - MYR {ep_high:.2f}" if ep_low < ep_high else f"MYR {ep_price:.2f}"
 
     fifty_two_high = _safe_float(fundamentals.get("fifty_two_week_high"), default=cmp * 1.25)
     rr_target_tp = ep_price + (2.5 * risk_amount)
