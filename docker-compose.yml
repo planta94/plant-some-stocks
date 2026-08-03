@@ -1,0 +1,11 @@
+services:
+  klse-quant-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: klse_quant_platform
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    restart: unless-stopped

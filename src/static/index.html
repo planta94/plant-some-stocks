@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Plant Some Stocks</title>
+  
+  <!-- Google Fonts & ApexCharts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Custom Glassmorphism Styles -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dark-theme">
+  <div class="app-container">
+    
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-icon"><i class="fa-solid fa-chart-line"></i></div>
+        <div class="logo-text">
+          <h1>Plant Some Stocks</h1>
+          <p class="subtitle">Quantitative Stock Screening & Simulation</p>
+        </div>
+      </div>
+      
+      <div class="header-right">
+        <div class="mode-switch-container">
+          <button id="nav-live-btn" class="nav-tab-btn active" onclick="switchTab('live')">
+            <i class="fa-solid fa-bolt text-gold"></i> Live Recommendations
+          </button>
+          <button id="nav-backtest-btn" class="nav-tab-btn" onclick="switchTab('backtest')">
+            <i class="fa-solid fa-vial-flask text-cyan"></i> Backtest Simulation
+          </button>
+        </div>
+        <div class="system-status">
+          <span class="status-dot green-pulse"></span> <span class="status-label">Market Engine Live</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="app-main">
+      
+      <!-- ================= SECTION 1: LIVE RECOMMENDATIONS ================= -->
+      <section id="tab-live" class="tab-content active">
+        
+        <!-- Controls & Filter Toolbar -->
+        <div class="glass-card filter-toolbar">
+          <div class="toolbar-title">
+            <i class="fa-solid fa-sliders"></i> Scanner Parameters
+          </div>
+          <div class="filter-controls">
+            <div class="control-group">
+              <label for="input-universe-scope">Market Scope:</label>
+              <select id="input-universe-scope" class="select-input">
+                <option value="top50">⚡ Top Liquid Stocks (50+)</option>
+                <option value="full">🌐 Full Bursa Malaysia Market (~1,000 Stocks)</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <label for="input-min-fund">Min Fundamental Score: <span id="val-min-fund" class="accent-text">60</span></label>
+              <input type="range" id="input-min-fund" min="0" max="90" value="60" oninput="updateFilterLabel('min-fund', this.value)">
+            </div>
+            
+            <div class="control-group">
+              <label for="input-min-rr">Min Risk : Reward: <span id="val-min-rr" class="accent-text">2.0</span></label>
+              <input type="range" id="input-min-rr" min="1.0" max="4.0" step="0.1" value="2.0" oninput="updateFilterLabel('min-rr', this.value)">
+            </div>
+            
+            <div class="control-group checkbox-group">
+              <label class="toggle-switch">
+                <input type="checkbox" id="input-require-uptrend" checked>
+                <span class="slider round"></span>
+              </label>
+              <span class="toggle-label">Require EMA 200 Uptrend</span>
+            </div>
+
+            <button class="btn btn-primary" onclick="runLiveScan()">
+              <i class="fa-solid fa-magnifying-glass"></i> Run Quant Scan
+            </button>
+          </div>
+        </div>
+
+        <!-- Real-Time Progress Monitor Overlay Card -->
+        <div id="progress-card" class="glass-card progress-card hidden">
+          <div class="progress-header">
+            <span id="progress-title" class="progress-title-text">
+              <i class="fa-solid fa-circle-notch fa-spin text-cyan"></i> Running Market Scan...
+            </span>
+            <span id="progress-percent" class="font-mono text-gold">0%</span>
+          </div>
+          <div class="progress-bar-track">
+            <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%;"></div>
+          </div>
+          <div class="progress-footer">
+            <span id="progress-status-text" class="progress-status-text">Initializing quantitative engine...</span>
+            <span id="progress-count-text" class="progress-count-text font-mono">0 / 0</span>
+          </div>
+        </div>
+
+        <!-- Matrix Results Table & Details Grid -->
+        <div class="live-grid">
+          
+          <!-- Recommendation Matrix Table Card -->
+          <div class="glass-card matrix-card">
+            <div class="card-header">
+              <h2><i class="fa-solid fa-list-check"></i> Stock Recommendation Matrix</h2>
+              <span id="scan-summary-badge" class="badge badge-info">Scanning...</span>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="matrix-table">
+                <thead>
+                  <tr>
+                    <th>Ticker</th>
+                    <th>Company</th>
+                    <th>Signal</th>
+                    <th>Price</th>
+                    <th>Entry (EP)</th>
+                    <th>Target (TP)</th>
+                    <th>Stop (SL)</th>
+                    <th>Upside</th>
+                    <th>R : R</th>
+                    <th>Score</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="matrix-table-body">
+                  <tr>
+                    <td colspan="11" class="text-center loading-cell">
+                      <i class="fa-solid fa-circle-notch fa-spin"></i> Loading quantitative stock data...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Deep-Dive Blueprint Inspector Panel -->
+          <div class="glass-card blueprint-card" id="blueprint-panel">
+            <div class="blueprint-placeholder" id="blueprint-placeholder">
+              <i class="fa-solid fa-chart-area placeholder-icon"></i>
+              <h3>Select a stock to inspect blueprint</h3>
+              <p>Click "Inspect" on any stock in the matrix to view interactive technical charts, EMAs, RSI, MACD, and signal justifications.</p>
+            </div>
+            
+            <div class="blueprint-content hidden" id="blueprint-details">
+              <div class="blueprint-header">
+                <div>
+                  <h2 id="bp-name">Malayan Banking Berhad</h2>
+                  <div class="bp-meta">
+                    <span id="bp-ticker" class="ticker-pill">1155.KL</span>
+                    <span id="bp-sector" class="sector-pill">Financial Services</span>
+                  </div>
+                </div>
+                <div class="bp-score-box">
+                  <div class="score-number" id="bp-score">78</div>
+                  <div class="score-label">Quant Score</div>
+                </div>
+              </div>
+
+              <!-- Execution Cards Grid -->
+              <div class="execution-grid">
+                <div class="exec-card entry">
+                  <div class="exec-label">Entry Range (EP)</div>
+                  <div class="exec-value" id="bp-ep">MYR 8.90</div>
+                  <div class="exec-sub" id="bp-ep-range">MYR 8.85 - MYR 8.90</div>
+                </div>
+                <div class="exec-card target">
+                  <div class="exec-label">Target Price (TP)</div>
+                  <div class="exec-value" id="bp-tp">MYR 10.20</div>
+                  <div class="exec-sub" id="bp-upside">+14.6% Target Upside</div>
+                </div>
+                <div class="exec-card stop">
+                  <div class="exec-label">Stop Loss (SL)</div>
+                  <div class="exec-value" id="bp-sl">MYR 8.35</div>
+                  <div class="exec-sub" id="bp-downside">-6.2% Downside Risk</div>
+                </div>
+                <div class="exec-card ratio">
+                  <div class="exec-label">Risk : Reward</div>
+                  <div class="exec-value" id="bp-rr">1 : 2.35</div>
+                  <div class="exec-sub" id="bp-signal-text">STRONG BUY</div>
+                </div>
+              </div>
+
+              <!-- Action Note Alert -->
+              <div class="action-note-box" id="bp-action-note">
+                <i class="fa-solid fa-circle-info"></i> High conviction setup. Solid fundamentals with healthy technical pullback.
+              </div>
+
+              <!-- Quant Signal Justification & Scoring Rationale Card -->
+              <div class="reasoning-box" id="bp-reasoning-box">
+                <div class="reasoning-title">
+                  <i class="fa-solid fa-brain"></i> Signal Justification & Rationale
+                </div>
+                
+                <div class="reasoning-section">
+                  <h4><i class="fa-solid fa-building"></i> Fundamental Strengths</h4>
+                  <ul id="bp-fund-reasons" class="reasoning-list"></ul>
+                </div>
+                
+                <div class="reasoning-section">
+                  <h4><i class="fa-solid fa-chart-line"></i> Technical & Momentum Triggers</h4>
+                  <ul id="bp-tech-reasons" class="reasoning-list"></ul>
+                </div>
+                
+                <div class="reasoning-section">
+                  <h4><i class="fa-solid fa-shield-halved"></i> Execution Justification</h4>
+                  <p id="bp-rr-reason" class="reasoning-text"></p>
+                </div>
+              </div>
+
+              <!-- Interactive Chart Container -->
+              <div class="chart-container">
+                <div class="chart-header">
+                  <span><i class="fa-solid fa-candlestick-chart"></i> Technical Chart & Key EMAs (20, 50, 200)</span>
+                </div>
+                <div id="stock-chart"></div>
+              </div>
+
+              <!-- Metrics Breakdown Table -->
+              <div class="metrics-grid" id="bp-metrics-grid">
+                <!-- Injected dynamically -->
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ================= SECTION 2: BACKTEST SIMULATION ================= -->
+      <section id="tab-backtest" class="tab-content">
+        
+        <div class="glass-card toolbar-card">
+          <div class="toolbar-left">
+            <h2><i class="fa-solid fa-clock-rotate-left"></i> 1-Year Historical Walk-Forward Backtest</h2>
+            <p>Evaluates strategy rules historically across the KLSE stock universe to quantify win-rate and risk-adjusted returns.</p>
+          </div>
+          <button class="btn btn-secondary" onclick="runBacktestSimulation()">
+            <i class="fa-solid fa-play"></i> Re-Run Simulation
+          </button>
+        </div>
+
+        <!-- KPI Metrics Grid -->
+        <div class="kpi-grid">
+          <div class="glass-card kpi-card">
+            <div class="kpi-icon text-cyan"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="kpi-body">
+              <div class="kpi-value" id="bt-kpi-return">+0.0%</div>
+              <div class="kpi-label">Cumulative Portfolio Return</div>
+            </div>
+          </div>
+          <div class="glass-card kpi-card">
+            <div class="kpi-icon text-gold"><i class="fa-solid fa-trophy"></i></div>
+            <div class="kpi-body">
+              <div class="kpi-value" id="bt-kpi-winrate">0.0%</div>
+              <div class="kpi-label">Strategy Win Rate</div>
+            </div>
+          </div>
+          <div class="glass-card kpi-card">
+            <div class="kpi-icon text-green"><i class="fa-solid fa-scale-balanced"></i></div>
+            <div class="kpi-body">
+              <div class="kpi-value" id="bt-kpi-pf">0.0</div>
+              <div class="kpi-label">Profit Factor</div>
+            </div>
+          </div>
+          <div class="glass-card kpi-card">
+            <div class="kpi-icon text-purple"><i class="fa-solid fa-receipt"></i></div>
+            <div class="kpi-body">
+              <div class="kpi-value" id="bt-kpi-trades">0</div>
+              <div class="kpi-label">Total Executed Trades</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stock Breakdown & Trade Log Dual Columns -->
+        <div class="backtest-grid">
+          <div class="glass-card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-building-columns"></i> Per-Stock Performance</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Ticker</th>
+                    <th>Name</th>
+                    <th>Trades</th>
+                    <th>Win Rate</th>
+                    <th>Cum. Return</th>
+                  </tr>
+                </thead>
+                <tbody id="bt-stock-table-body">
+                  <tr><td colspan="5" class="text-center">Click "Re-Run Simulation" to calculate.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-list-ol"></i> Executed Trade Execution Logs</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Ticker</th>
+                    <th>Entry Date</th>
+                    <th>Exit Date</th>
+                    <th>Entry (MYR)</th>
+                    <th>Exit (MYR)</th>
+                    <th>Return %</th>
+                    <th>Exit Trigger</th>
+                  </tr>
+                </thead>
+                <tbody id="bt-trades-table-body">
+                  <tr><td colspan="7" class="text-center">No trades logged yet.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/scanner.js"></script>
+  <script src="js/blueprint.js"></script>
+  <script src="js/backtest.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
