@@ -78,3 +78,6 @@ class BacktestResponse(BaseModel):
     summary_metrics: Dict[str, Any]
     stock_breakdown: List[Dict[str, Any]]
     recent_trades: List[Dict[str, Any]]
+    equity_curve: Optional[List[Dict[str, Any]]] = None
+    exit_stats: Optional[Dict[str, int]] = None
+

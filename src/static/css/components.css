@@ -277,3 +277,36 @@ input:checked + .slider:before { transform: translateX(18px); }
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* KPI Glow Effects */
+.kpi-glow-cyan { border-left: 3px solid var(--accent-cyan); }
+.kpi-glow-gold { border-left: 3px solid var(--accent-gold); }
+.kpi-glow-green { border-left: 3px solid var(--accent-green); }
+.kpi-glow-purple { border-left: 3px solid var(--accent-purple); }
+
+/* Backtest Charts Grid */
+.backtest-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.chart-card {
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-box {
+  min-height: 240px;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .backtest-charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

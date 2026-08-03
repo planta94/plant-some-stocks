@@ -11,7 +11,7 @@ router = APIRouter(prefix="/api/backtest", tags=["Simulation & Backtesting"])
 @router.get("/run", response_model=BacktestResponse)
 def run_backtest_get():
     """Runs 1-year historical simulation on default KLSE universe."""
-    summary_df, trades_df, summary_metrics = run_full_universe_backtest()
+    summary_df, trades_df, summary_metrics, equity_curve, exit_stats = run_full_universe_backtest()
     
     stock_breakdown = summary_df.to_dict(orient="records") if not summary_df.empty else []
     recent_trades = trades_df.to_dict(orient="records") if not trades_df.empty else []
@@ -19,13 +19,15 @@ def run_backtest_get():
     return {
         "summary_metrics": summary_metrics,
         "stock_breakdown": stock_breakdown,
-        "recent_trades": recent_trades
+        "recent_trades": recent_trades,
+        "equity_curve": equity_curve,
+        "exit_stats": exit_stats
     }
 
 @router.post("/run", response_model=BacktestResponse)
 def run_backtest_post(payload: BacktestRequest):
     """Runs 1-year historical simulation on custom selected tickers."""
-    summary_df, trades_df, summary_metrics = run_full_universe_backtest(tickers=payload.tickers)
+    summary_df, trades_df, summary_metrics, equity_curve, exit_stats = run_full_universe_backtest(tickers=payload.tickers)
     
     stock_breakdown = summary_df.to_dict(orient="records") if not summary_df.empty else []
     recent_trades = trades_df.to_dict(orient="records") if not trades_df.empty else []
@@ -33,5 +35,8 @@ def run_backtest_post(payload: BacktestRequest):
     return {
         "summary_metrics": summary_metrics,
         "stock_breakdown": stock_breakdown,
-        "recent_trades": recent_trades
+        "recent_trades": recent_trades,
+        "equity_curve": equity_curve,
+        "exit_stats": exit_stats
     }
+

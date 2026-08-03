@@ -116,17 +116,38 @@ def run_full_universe_backtest(tickers=None):
         })
 
     # Portfolio level aggregates
+    equity_curve = []
+    exit_stats = {"Target Price Hit": 0, "Stop Loss Hit": 0, "RSI Overbought Exit": 0, "Other": 0}
+
     if all_trades:
         winning_trades = [t for t in all_trades if t["Return_Pct"] > 0]
         losing_trades = [t for t in all_trades if t["Return_Pct"] <= 0]
 
         win_rate = round((len(winning_trades) / len(all_trades)) * 100, 1)
-        avg_trade_return = round(np.mean([t["Return_Pct"] for t in all_trades]), 2)
+        avg_trade_return = round(float(np.mean([t["Return_Pct"] for t in all_trades])), 2)
         total_portfolio_return = round(sum([t["Return_Pct"] for t in all_trades]), 2)
         profit_factor = round(
             sum([t["Return_Pct"] for t in winning_trades]) / (abs(sum([t["Return_Pct"] for t in losing_trades])) + 1e-9),
             2
         )
+
+        # Chronological Equity Curve & Exit Stats
+        sorted_trades = sorted(all_trades, key=lambda x: x.get("Exit_Date", ""))
+        cum_ret = 0.0
+        for t in sorted_trades:
+            cum_ret += t["Return_Pct"]
+            equity_curve.append({
+                "date": t.get("Exit_Date", ""),
+                "ticker": t.get("Ticker", ""),
+                "trade_return": t["Return_Pct"],
+                "cumulative_return": round(cum_ret, 2)
+            })
+
+            reason = t.get("Exit_Reason", "")
+            if reason in exit_stats:
+                exit_stats[reason] += 1
+            else:
+                exit_stats["Other"] += 1
     else:
         win_rate = 0.0
         avg_trade_return = 0.0
@@ -146,4 +167,5 @@ def run_full_universe_backtest(tickers=None):
     summary_df = pd.DataFrame(stock_summaries) if stock_summaries else pd.DataFrame()
     trades_df = pd.DataFrame(all_trades) if all_trades else pd.DataFrame()
 
-    return summary_df, trades_df, summary_metrics
+    return summary_df, trades_df, summary_metrics, equity_curve, exit_stats
+

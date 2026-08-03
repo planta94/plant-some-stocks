@@ -244,45 +244,90 @@
       <!-- ================= SECTION 2: BACKTEST SIMULATION ================= -->
       <section id="tab-backtest" class="tab-content">
         
-        <div class="glass-card toolbar-card">
-          <div class="toolbar-left">
-            <h2><i class="fa-solid fa-clock-rotate-left"></i> 1-Year Historical Walk-Forward Backtest</h2>
-            <p>Evaluates strategy rules historically across the KLSE stock universe to quantify win-rate and risk-adjusted returns.</p>
+        <div class="glass-card filter-toolbar">
+          <div class="toolbar-title">
+            <i class="fa-solid fa-clock-rotate-left"></i> 1-Year Historical Walk-Forward Backtest Engine
           </div>
-          <button class="btn btn-secondary" onclick="runBacktestSimulation()">
-            <i class="fa-solid fa-play"></i> Re-Run Simulation
-          </button>
+          <div class="filter-controls">
+            <div class="control-group">
+              <label>Strategy Window:</label>
+              <select class="select-input" id="bt-input-window">
+                <option value="1y">🗓️ 1-Year Walk-Forward (250 Trading Days)</option>
+                <option value="2y">🗓️ 2-Year Multi-Cycle</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <label>Initial Portfolio Allocation:</label>
+              <select class="select-input" id="bt-input-capital">
+                <option value="10000">💰 MYR 10,000 / Stock Position</option>
+                <option value="50000">💰 MYR 50,000 / Stock Position</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <label>Exit Rule Strategy Preset:</label>
+              <select class="select-input" id="bt-input-preset">
+                <option value="balanced">⚖️ Balanced (1.8 ATR Stop, 2.5 R:R Target)</option>
+                <option value="aggressive">🚀 Aggressive Trend (2.0 ATR Stop, 3.0 R:R Target)</option>
+                <option value="tight">🛡️ Capital Protection (1.2 ATR Stop, 2.0 R:R Target)</option>
+              </select>
+            </div>
+
+            <button class="btn btn-secondary" onclick="runBacktestSimulation()">
+              <i class="fa-solid fa-play"></i> Re-Run Simulation
+            </button>
+          </div>
         </div>
 
         <!-- KPI Metrics Grid -->
         <div class="kpi-grid">
-          <div class="glass-card kpi-card">
+          <div class="glass-card kpi-card kpi-glow-cyan">
             <div class="kpi-icon text-cyan"><i class="fa-solid fa-chart-line"></i></div>
             <div class="kpi-body">
-              <div class="kpi-value" id="bt-kpi-return">+0.0%</div>
+              <div class="kpi-value text-cyan" id="bt-kpi-return">+0.0%</div>
               <div class="kpi-label">Cumulative Portfolio Return</div>
             </div>
           </div>
-          <div class="glass-card kpi-card">
+          <div class="glass-card kpi-card kpi-glow-gold">
             <div class="kpi-icon text-gold"><i class="fa-solid fa-trophy"></i></div>
             <div class="kpi-body">
-              <div class="kpi-value" id="bt-kpi-winrate">0.0%</div>
+              <div class="kpi-value text-gold" id="bt-kpi-winrate">0.0%</div>
               <div class="kpi-label">Strategy Win Rate</div>
             </div>
           </div>
-          <div class="glass-card kpi-card">
+          <div class="glass-card kpi-card kpi-glow-green">
             <div class="kpi-icon text-green"><i class="fa-solid fa-scale-balanced"></i></div>
             <div class="kpi-body">
-              <div class="kpi-value" id="bt-kpi-pf">0.0</div>
+              <div class="kpi-value text-green" id="bt-kpi-pf">0.0</div>
               <div class="kpi-label">Profit Factor</div>
             </div>
           </div>
-          <div class="glass-card kpi-card">
+          <div class="glass-card kpi-card kpi-glow-purple">
             <div class="kpi-icon text-purple"><i class="fa-solid fa-receipt"></i></div>
             <div class="kpi-body">
-              <div class="kpi-value" id="bt-kpi-trades">0</div>
+              <div class="kpi-value text-purple" id="bt-kpi-trades">0</div>
               <div class="kpi-label">Total Executed Trades</div>
             </div>
+          </div>
+        </div>
+
+        <!-- Backtest Analytics Charts Section -->
+        <div class="backtest-charts-grid">
+          <div class="glass-card chart-card">
+            <div class="card-header">
+              <h2><i class="fa-solid fa-chart-area text-cyan"></i> Cumulative Equity Growth Curve</h2>
+              <span class="badge badge-buy">1-Year Walk-Forward</span>
+            </div>
+            <div id="bt-equity-chart" class="chart-box"></div>
+          </div>
+
+          <div class="glass-card chart-card">
+            <div class="card-header">
+              <h2><i class="fa-solid fa-chart-pie text-purple"></i> Trade Exit Trigger Distribution</h2>
+              <span class="badge badge-info">Rule Breakdown</span>
+            </div>
+            <div id="bt-exit-chart" class="chart-box"></div>
           </div>
         </div>
 
@@ -291,6 +336,7 @@
           <div class="glass-card">
             <div class="card-header">
               <h3><i class="fa-solid fa-building-columns"></i> Per-Stock Performance</h3>
+              <input type="text" class="table-search-input" placeholder="🔍 Search stock..." oninput="filterStockTable(this.value)">
             </div>
             <div class="table-responsive">
               <table class="data-table">
@@ -304,7 +350,7 @@
                   </tr>
                 </thead>
                 <tbody id="bt-stock-table-body">
-                  <tr><td colspan="5" class="text-center">Click "Re-Run Simulation" to calculate.</td></tr>
+                  <tr><td colspan="5" class="text-center loading-cell"><i class="fa-solid fa-circle-notch fa-spin"></i> Initializing simulation data...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -313,6 +359,7 @@
           <div class="glass-card">
             <div class="card-header">
               <h3><i class="fa-solid fa-list-ol"></i> Executed Trade Execution Logs</h3>
+              <input type="text" class="table-search-input" placeholder="🔍 Filter trade log..." oninput="filterTradesTable(this.value)">
             </div>
             <div class="table-responsive">
               <table class="data-table">
@@ -328,7 +375,7 @@
                   </tr>
                 </thead>
                 <tbody id="bt-trades-table-body">
-                  <tr><td colspan="7" class="text-center">No trades logged yet.</td></tr>
+                  <tr><td colspan="7" class="text-center loading-cell"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading trade execution logs...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -336,6 +383,7 @@
         </div>
 
       </section>
+
 
     </main>
 

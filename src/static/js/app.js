@@ -14,5 +14,9 @@ function switchTab(tabName) {
   } else if (tabName === 'backtest') {
     document.getElementById("tab-backtest").classList.add("active");
     document.getElementById("nav-backtest-btn").classList.add("active");
+    if (typeof cachedBacktestData === 'undefined' || !cachedBacktestData) {
+      runBacktestSimulation();
+    }
   }
 }
+
